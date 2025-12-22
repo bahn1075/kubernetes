@@ -81,11 +81,15 @@ spec:
           {{- toYaml .Values.resources | nindent 10 }}
         volumeMounts:
         - name: postgres-data
-          mountPath: /var/lib/postgresql/data
+          mountPath: {{ .Values.persistence.mountPath }}
       volumes:
       - name: postgres-data
+        {{- if .Values.persistence.enabled }}
         persistentVolumeClaim:
-          claimName: postgres-postgresql-data-0
+          claimName: {{ include "postgresql.fullname" . }}-data
+        {{- else }}
+        emptyDir: {}
+        {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}

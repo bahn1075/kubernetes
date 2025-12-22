@@ -12,11 +12,15 @@ spec:
   storage:
     type: jbod
     volumes:
-      - deleteClaim: false
-        existingClaim: kafka-fss-pvc
-        id: 0
-        kraftMetadata: shared
+      - id: 0
         type: persistent-claim
+        size: 10Gi
+        deleteClaim: false
+        kraftMetadata: shared
+        overrides:
+          - broker: 0
+            persistentVolumeClaim:
+              existingClaim: kafka-fss-pvc
 ---
 
 apiVersion: kafka.strimzi.io/v1

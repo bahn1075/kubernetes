@@ -2,8 +2,10 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: postgres-fss-pvc
+  name: postgres-postgresql-data-0
   namespace: monitoring
+  labels:
+    app: postgres-fss-pvc
 spec:
   accessModes:
     - ReadWriteMany

@@ -17,10 +17,6 @@ spec:
         size: 10Gi
         deleteClaim: false
         kraftMetadata: shared
-        overrides:
-          - broker: 0
-            persistentVolumeClaim:
-              existingClaim: kafka-fss-pvc
 ---
 
 apiVersion: kafka.strimzi.io/v1

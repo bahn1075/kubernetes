@@ -10,9 +10,13 @@ spec:
     - controller
     - broker
   storage:
-    type: persistent-claim
-    existingClaim: kafka-fss-pvc
-    deleteClaim: false
+    type: jbod
+    volumes:
+      - deleteClaim: false
+        existingClaim: kafka-fss-pvc
+        id: 0
+        kraftMetadata: shared
+        type: persistent-claim
 ---
 
 apiVersion: kafka.strimzi.io/v1

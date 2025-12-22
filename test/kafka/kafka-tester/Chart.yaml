@@ -1,0 +1,6 @@
+apiVersion: v2
+name: kafka-tester
+description: A Helm chart for Kafka producer and consumer testing
+type: application
+version: 0.1.0
+appVersion: "latest"

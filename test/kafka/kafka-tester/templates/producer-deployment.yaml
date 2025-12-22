@@ -1,0 +1,43 @@
+{{- if .Values.producer.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "kafka-tester.fullname" . }}-producer
+  labels:
+    app: producer
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: producer
+  template:
+    metadata:
+      labels:
+        app: producer
+    spec:
+      containers:
+      - name: producer
+        image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+        command:
+        - /bin/bash
+        - -c
+        - |
+          while true; do
+            echo "{{ .Values.producer.message }}" | kafka-console-producer --broker-list {{ .Values.kafka.bootstrapServers }} --topic {{ .Values.producer.topic }};
+            sleep 5;
+          done
+        resources:
+          {{- toYaml .Values.resources | nindent 10 }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}

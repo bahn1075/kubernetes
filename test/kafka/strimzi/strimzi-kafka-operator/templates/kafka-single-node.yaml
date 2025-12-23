@@ -9,6 +9,17 @@ spec:
   roles:
     - controller
     - broker
+  template:
+    pod:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/hostname
+                    operator: In
+                    values:
+                      - 10.0.10.209
   storage:
     type: jbod
     volumes:

@@ -2,7 +2,7 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: kafka-fss-pvc
+  name: data-0-my-cluster-dual-role-0
   namespace: kafka
   labels:
     app: kafka-fss-pvc

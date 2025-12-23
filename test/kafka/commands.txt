@@ -42,3 +42,60 @@ helm install kafka-ui /app/mykubernetes/kafka/kafka-ui -n kafka
 
 6. wsl에서는 kafbat-ui에 firefox를 ubuntu 내부에 설치하고
    192로컬 ip로 접근한다
+
+##################참고
+
+ 🔍 권한 에러 발생 원인
+
+  당신이 언급한 대로 /oke-fss/kafka는 472:472 소유권으로 설정되어 있지만, 현재는 마운트 포인트가 **1001:0 (kafka:root)**로 변경되었습니다.
+
+  이는 Kubernetes의 fsGroup 기능 덕분입니다:
+
+  # kafka-single-node.yaml:80
+  template:
+    pod:
+      securityContext:
+        fsGroup: 1001  # ← 이 설정이 핵심!
+
+  fsGroup의 역할:
+  - Pod가 볼륨을 마운트할 때, Kubernetes가 자동으로 GID를 1001로 변경
+  - 모든 새로 생성되는 파일은 GID 1001로 설정
+  - 기존 파일/디렉토리도 fsGroup GID로 재귀적으로 변경 (옵션에 따라)
+
+  ❌ 별도 PVC 방식에서 실패한 이유
+
+  1. 권한 충돌:
+    - 파일시스템: 472:472 소유권
+    - Kafka 프로세스: UID 1001 필요
+    - fsGroup 없이 마운트하면 → Permission Denied
+  2. Strimzi 인식 문제:
+    - Strimzi는 자신이 생성하지 않은 PVC를 사용할 때 더 엄격하게 검증
+    - 필요한 레이블/어노테이션이 없으면 거부하거나 제대로 관리하지 못함
+  3. 타이밍 이슈:
+    - Strimzi가 PVC를 먼저 생성하려고 시도 → 이미 존재함 → 충돌
+    - 또는 PVC를 찾지 못함 (이름 불일치, 네임스페이스 문제 등)
+
+  ✅ 현재 방식이 성공한 이유
+
+  1. 정확한 PVC 이름: data-{id}-{cluster}-{pool}-{replica} 규칙 준수
+  2. Strimzi가 PVC 발견: 이미 존재 → 레이블 추가 → 관리 시작
+  3. fsGroup 자동 적용: 472:472 → 1001:0으로 권한 변경
+  4. 단일 파일 적용: 순서 보장 (PV → PVC → KafkaNodePool → Kafka)
+
+  💡 별도 파일로 하려면?
+
+  만약 별도 파일로 관리하고 싶다면:
+
+  # 1. PV/PVC 먼저 생성 (정확한 이름 사용!)
+  kubectl apply -f kafka-pv.yaml
+  kubectl apply -f kafka-pvc.yaml
+
+  # 2. PVC에 Strimzi 레이블 수동 추가
+  kubectl label pvc data-0-my-cluster-dual-role-0 \
+    strimzi.io/cluster=my-cluster \
+    app.kubernetes.io/managed-by=strimzi-cluster-operator
+
+  # 3. Kafka 리소스 생성 (fsGroup 필수!)
+  kubectl apply -f kafka-single-node.yaml
+
+  하지만 현재 단일 파일 방식이 더 안전하고 관리하기 쉽습니다! 🎯

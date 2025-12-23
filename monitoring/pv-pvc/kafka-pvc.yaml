@@ -4,8 +4,6 @@ kind: PersistentVolumeClaim
 metadata:
   name: data-0-my-cluster-dual-role-0
   namespace: kafka
-  labels:
-    app: kafka-fss-pvc
 spec:
   accessModes:
     - ReadWriteMany

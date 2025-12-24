@@ -15,7 +15,6 @@ spec:
   persistentVolumeReclaimPolicy: Retain
   volumeMode: Filesystem
 ---
-
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
@@ -29,7 +28,6 @@ spec:
   volumeName: kafka-data-pv
   storageClassName: ""
 ---
-
 apiVersion: kafka.strimzi.io/v1
 kind: KafkaNodePool
 metadata:
@@ -50,7 +48,6 @@ spec:
         deleteClaim: false
         kraftMetadata: shared
 ---
-
 apiVersion: kafka.strimzi.io/v1
 kind: Kafka
 metadata:
@@ -59,21 +56,32 @@ spec:
   kafka:
     version: 4.1.1
     metadataVersion: 4.1-IV1
+    metricsConfig: # 여기 부분 중요
+      type: jmxPrometheusExporter
+      valueFrom:
+        configMapKeyRef: # 여기 부분 중요
+          name: kafka-metrics
+          key: kafka-metrics-config.yml
     listeners:
       - name: plain
         port: 9092
-        type: internal
+        type: cluster-ip
         tls: false
+        configuration:
+          useServiceDnsDomain: true  # 핵심 추가!
       - name: tls
         port: 9093
-        type: internal
+        type: cluster-ip
         tls: true
+        configuration:
+          useServiceDnsDomain: true  # 핵심 추가!
     config:
       offsets.topic.replication.factor: 1
       transaction.state.log.replication.factor: 1
       transaction.state.log.min.isr: 1
       default.replication.factor: 1
       min.insync.replicas: 1
+      auto.create.topics.enable: true  # 자동 토픽 생성
     template:
       pod:
         securityContext:
@@ -81,4 +89,3 @@ spec:
   entityOperator:
     topicOperator: {}
     userOperator: {}
-

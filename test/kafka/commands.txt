@@ -8,37 +8,139 @@ kubectl create -f 'https://strimzi.io/install/latest?namespace=kafka' -n kafka
 # Apply the `Kafka` Cluster CR file
 kubectl apply -f /app/mykubernetes/kafka/kafka-single-node.yaml -n kafka 
 
-1. producer pod 생성
-kubectl create -n kafka deployment kafka-producer \
+# Producer (일회성)
+kubectl run kafka-producer -n kafka \
   --image=quay.io/strimzi/kafka:0.49.1-kafka-4.1.1 \
-  -- sleep infinity
-2. consumer pod 생성
-kubectl create -n kafka deployment kafka-consumer \
-  --image=quay.io/strimzi/kafka:0.49.1-kafka-4.1.1 \
-  -- sleep infinity
-
-3. Producer에서 메시지 전송
-# Pod에 접속
-kubectl exec -n kafka -it deployment/kafka-producer -- bash
-
-# Shell 내부에서 실행
-bin/kafka-console-producer.sh \
-  --bootstrap-server my-cluster-kafka-bootstrap:9092 \
+  --rm -it --restart=Never \
+  -- bin/kafka-console-producer.sh \
+  --bootstrap-server my-cluster-kafka-plain-bootstrap:9092 \
   --topic my-topic
 
-4. Consumer에서 메시지 수신
-# Pod에 접속
-kubectl exec -n kafka -it deployment/kafka-consumer -- bash
-
-# Shell 내부에서 실행
-bin/kafka-console-consumer.sh \
-  --bootstrap-server my-cluster-kafka-bootstrap:9092 \
+# Consumer (일회성, 다른 터미널 최초 WARN 메세지 발생할 수 있음)
+kubectl run kafka-consumer -n kafka \
+  --image=quay.io/strimzi/kafka:0.49.1-kafka-4.1.1 \
+  --rm -it --restart=Never \
+  -- bin/kafka-console-consumer.sh \
+  --bootstrap-server my-cluster-kafka-plain-bootstrap:9092 \
   --topic my-topic \
   --from-beginning
 
-
 5. kafka ui 실행
-helm install kafka-ui /app/mykubernetes/kafka/kafka-ui -n kafka
+5-1 일반 helm install : helm install kafka-ui /app/mykubernetes/kafka/kafka-ui -n kafka
+5-2 ingress 함께
+  helm install kafka-ui /app/mykubernetes/kafka/kafka-ui -n kafka \
+    --set ingress.enabled=true \
+    --set ingress.ingressClassName=nginx \
+    --set ingress.host=kafka.64bit.kr \
+    --set ingress.path=/ \
+    --set ingress.pathType=Prefix \
+    --set-string ingress.annotations."nginx\.ingress\.kubernetes\.io/backend-protocol"=HTTP \
+    --set ingress.tls.enabled=false
+
+5-3 ingress 포함 helm install 실패할 경우 아래 yaml 파일 생성후 적용
+apiVersion: networking.k8s.io/v1
+ kind: Ingress
+ metadata:
+   name: kafka-ui-ingress
+   namespace: kafka
+   annotations:
+     nginx.ingress.kubernetes.io/backend-protocol: HTTP
+ spec:
+   ingressClassName: nginx
+   rules:
+   - host: kafka.64bit.kr
+     http:
+       paths:
+       - path: /
+         pathType: Prefix
+         backend:
+           service:
+             name: kafka-ui
+             port:
+               number: 80
+
+
+
+
+
+6. grafana에서 kafka 모니터링을 위한 kafka export helm 설치
+
+# Helm repo 추가
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm repo update
+
+# Kafka Exporter 설치
+helm install kafka-exporter prometheus-community/prometheus-kafka-exporter \
+  -n monitoring \
+  --set image.registry=docker.io \
+  --set image.repository=danielqsj/kafka-exporter \
+  --set image.tag=v1.9.0 \
+  --set 'kafkaServer[0]=my-cluster-kafka-plain-bootstrap.kafka.svc.cluster.local:9092' \
+  --set serviceMonitor.enabled=true \
+  --set serviceMonitor.namespace=monitoring \
+  --set 'serviceMonitor.additionalLabels.release=kube-prometheus-stack'
+
+# 삭제
+helm uninstall kafka-exporter -n monitoring
+
+
 
 6. wsl에서는 kafbat-ui에 firefox를 ubuntu 내부에 설치하고
    192로컬 ip로 접근한다
+
+##################참고
+
+ 🔍 권한 에러 발생 원인
+
+  당신이 언급한 대로 /oke-fss/kafka는 472:472 소유권으로 설정되어 있지만, 현재는 마운트 포인트가 **1001:0 (kafka:root)**로 변경되었습니다.
+
+  이는 Kubernetes의 fsGroup 기능 덕분입니다:
+
+  # kafka-single-node.yaml:80
+  template:
+    pod:
+      securityContext:
+        fsGroup: 1001  # ← 이 설정이 핵심!
+
+  fsGroup의 역할:
+  - Pod가 볼륨을 마운트할 때, Kubernetes가 자동으로 GID를 1001로 변경
+  - 모든 새로 생성되는 파일은 GID 1001로 설정
+  - 기존 파일/디렉토리도 fsGroup GID로 재귀적으로 변경 (옵션에 따라)
+
+  ❌ 별도 PVC 방식에서 실패한 이유
+
+  1. 권한 충돌:
+    - 파일시스템: 472:472 소유권
+    - Kafka 프로세스: UID 1001 필요
+    - fsGroup 없이 마운트하면 → Permission Denied
+  2. Strimzi 인식 문제:
+    - Strimzi는 자신이 생성하지 않은 PVC를 사용할 때 더 엄격하게 검증
+    - 필요한 레이블/어노테이션이 없으면 거부하거나 제대로 관리하지 못함
+  3. 타이밍 이슈:
+    - Strimzi가 PVC를 먼저 생성하려고 시도 → 이미 존재함 → 충돌
+    - 또는 PVC를 찾지 못함 (이름 불일치, 네임스페이스 문제 등)
+
+  ✅ 현재 방식이 성공한 이유
+
+  1. 정확한 PVC 이름: data-{id}-{cluster}-{pool}-{replica} 규칙 준수
+  2. Strimzi가 PVC 발견: 이미 존재 → 레이블 추가 → 관리 시작
+  3. fsGroup 자동 적용: 472:472 → 1001:0으로 권한 변경
+  4. 단일 파일 적용: 순서 보장 (PV → PVC → KafkaNodePool → Kafka)
+
+  💡 별도 파일로 하려면?
+
+  만약 별도 파일로 관리하고 싶다면:
+
+  # 1. PV/PVC 먼저 생성 (정확한 이름 사용!)
+  kubectl apply -f kafka-pv.yaml
+  kubectl apply -f kafka-pvc.yaml
+
+  # 2. PVC에 Strimzi 레이블 수동 추가
+  kubectl label pvc data-0-my-cluster-dual-role-0 \
+    strimzi.io/cluster=my-cluster \
+    app.kubernetes.io/managed-by=strimzi-cluster-operator
+
+  # 3. Kafka 리소스 생성 (fsGroup 필수!)
+  kubectl apply -f kafka-single-node.yaml
+
+  하지만 현재 단일 파일 방식이 더 안전하고 관리하기 쉽습니다! 🎯

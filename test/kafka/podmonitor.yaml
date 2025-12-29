@@ -1,0 +1,19 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: kafka-podmonitor
+  namespace: kafka            # ← Prometheus가 감시하는 NS
+  labels:
+    release: monitor            # ← 당신의 Prometheus 릴리스 라벨에 맞추세요
+spec:
+  namespaceSelector:
+    matchNames: ["kafka"] # ← Kafka가 있는 NS
+  selector:
+    matchLabels:                   # ← Kafka 서비스에 공통으로 붙는 라벨
+      strimzi.io/cluster: kafka-cluster
+      strimzi.io/component-type: kafka
+  podMetricsEndpoints:
+    - targetPort: 9404           # POD에서 메트릭을 스크랩 할 수 있도록 열어둔 포트와 경로
+      path: /metrics
+      interval: 30s
+      scrapeTimeout: 10s

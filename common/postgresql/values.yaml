@@ -86,13 +86,7 @@ affinity: {}
 # Persistence configuration for PostgreSQL data
 persistence:
   enabled: false
-
-# Volume configuration (deprecated, use persistence instead)
-volume:
-  enabled: true
-  className: ""
-  size: 3Gi
-  mountPath: /var/lib/postgresql/data
+  pvcName: postgres-postgresql-data-0
 
 tests:
   enabled: true

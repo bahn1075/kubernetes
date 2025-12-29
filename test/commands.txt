@@ -1,0 +1,2 @@
+1. 테스트 시나리오를 /app/kubernetes/test/k6-kafka-test-job.yaml 에 작성
+2. 그리고 /app/kubernetes/test/start_kafka_test.sh 를 수행한다. ./app/kubernetes/test/start_kafka_test.sh

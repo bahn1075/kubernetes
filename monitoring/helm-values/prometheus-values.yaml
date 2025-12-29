@@ -38,6 +38,22 @@ prometheus:
             subPath: prometheus  # /oke-fss/prometheus 사용
 
     additionalScrapeConfigs:
+      # Kafka Metrics Reporter
+      - job_name: 'kafka-metrics'
+        static_configs:
+          - targets: ['my-cluster-kafka-0.my-cluster-kafka-brokers.default.svc.cluster.local:9404']
+        relabel_configs:
+          - source_labels: [__address__]
+            target_label: instance
+            replacement: 'my-cluster-kafka-0'
+          - source_labels: [__address__]
+            target_label: pod
+            replacement: 'my-cluster-kafka-0'
+      # Kafka Broker Metrics Reporter (멀티 브로커의 경우 추가)
+      - job_name: 'kafka-broker-metrics'
+        scrape_interval: 30s
+        static_configs:
+          - targets: ['my-cluster-kafka-brokers.default.svc.cluster.local:9404']
       # Loki에서 메트릭 수집
       - job_name: 'loki'
         static_configs:

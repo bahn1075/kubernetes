@@ -1,0 +1,21 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: k6-kafka-test
+  namespace: kafka
+spec:
+  template:
+    spec:
+      containers:
+      - name: k6
+        image: mostafamoradian/xk6-kafka:latest
+        command: ["k6", "run", "/scripts/kafka-test.js"]
+        volumeMounts:
+        - name: scripts
+          mountPath: /scripts
+      restartPolicy: Never
+      volumes:
+      - name: scripts
+        configMap:
+          name: k6-script
+  backoffLimit: 1

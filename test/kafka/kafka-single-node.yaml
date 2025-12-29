@@ -42,6 +42,16 @@ spec:
       transaction.state.log.min.isr: 1
       default.replication.factor: 1
       min.insync.replicas: 1
+    metricsConfig:
+      type: strimziMetricsReporter
+      values:
+        allowList:
+          - "kafka_log.*"
+          - "kafka_network.*"
+          - "kafka_server.*"
+          - "kafka_controller.*"
+          - "kafka_producer.*"
+          - "kafka_consumer.*"
   entityOperator:
     topicOperator: {}
     userOperator: {}

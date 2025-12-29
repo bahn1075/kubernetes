@@ -82,23 +82,6 @@ datasources:
         url: http://tempo.monitoring.svc.cluster.local:3200
         access: proxy
 
-# 대시보드 프로비저닝
-# 초기 import 대상 대시보드 ID : 1860 (Node Exporter Full)
-# global: 15757, namespace: 15758, node: 15759, pod: 15760
-dashboardProviders:
-  dashboardproviders.yaml:
-    apiVersion: 1
-    providers:
-      - name: 'default'
-        orgId: 1
-        folder: ''
-        type: file
-        disableDeletion: false
-        editable: true
-        options:
-          path: /var/lib/grafana/dashboards/default
-
-
 # values.yaml 내에 추가 (차트에 따라 key가 다를 수 있음; grafana 공식 차트는 extraInitContainers 지원)
 initChownData:
   enabled: true
@@ -132,8 +115,16 @@ persistence:
   accessModes:
     - ReadWriteMany
   size: 5Gi
-  # storageClassName은 제거(기존 PVC가 있으므로 불필요)
-  # storageClassName: oci-fs
+
+# 대시보드 ConfigMap 마운트
+extraVolumes:
+  - name: dashboards
+    configMap:
+      name: grafana-dashboards
+
+extraVolumeMounts:
+  - name: dashboards
+    mountPath: /var/lib/grafana/dashboards/default
 
 
 # Liveness Probe 설정

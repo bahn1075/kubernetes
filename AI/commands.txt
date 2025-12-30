@@ -1,0 +1,12 @@
+docker run -p 7860:7860 langflowai/langflow:latest
+
+# langflow의 vector store로 oracle을 제시했던 commit. pull 되지 못함
+
+https://github.com/langflow-ai/langflow/pull/7585/commits/094130b5d0d16fff9fffefb3c5b9cdc0b5d3f417
+
+# langflow의 vector store로 oracle을 사용하는 custom component
+https://github.com/paulparkinson/langflow-agenticai-oracle-mcp-vector-nl2sql
+
+# 운영관점에서의 pgvector 사용
+https://medium.com/@speedcraft21/rag-that-ships-vllm-pgvector-in-production-eaece6a2d9f6
+

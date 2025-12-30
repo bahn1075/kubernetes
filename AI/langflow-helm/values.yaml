@@ -54,7 +54,7 @@ langflow:
   backend:
     replicaCount: 1
     service:
-      type: ClusterIP
+      type: LoadBalancer
       port: 7860
     backendOnly: true
     numWorkers: 1
@@ -199,8 +199,8 @@ langflow:
     enabled: true
     replicaCount: 1
     service:
-      type: ClusterIP
-      port: 8080
+      type: LoadBalancer
+      port: 80
     image:
       repository: langflowai/langflow-frontend
       imagePullPolicy: IfNotPresent

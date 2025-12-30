@@ -1,0 +1,9 @@
+helm repo add otwld https://helm.otwld.com/
+helm repo update
+
+ helm install ollama otwld/ollama \
+  --namespace ollama \
+  --create-namespace \
+  -f /app/kubernetes/AI/ollama-helm/values.yaml
+
+

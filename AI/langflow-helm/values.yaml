@@ -54,13 +54,13 @@ langflow:
   backend:
     replicaCount: 1
     service:
-      type: LoadBalancer
+      type: ClusterIP
       port: 7860
     backendOnly: true
     numWorkers: 1
     image:
-      repository: langflowai/langflow
-      imagePullPolicy: IfNotPresent
+      repository: langflow-oracle
+      imagePullPolicy: Never
       tag: latest
     command:
       - python
@@ -89,6 +89,8 @@ langflow:
         value: "/app/db/alembic.log"
       - name: LANGFLOW_UPDATE_STARTER_PROJECTS
         value: "false"
+      - name: LANGFLOW_MAX_FILE_SIZE_UPLOAD
+        value: "100"  # 100MB
     nodeSelector: {}
     tolerations: []
     affinity: {}
@@ -202,8 +204,8 @@ langflow:
       type: LoadBalancer
       port: 80
     image:
-      repository: langflowai/langflow-frontend
-      imagePullPolicy: IfNotPresent
+      repository: langflow-oracle-frontend
+      imagePullPolicy: Never
       tag: latest
     resources:
       requests:

@@ -59,8 +59,8 @@ langflow:
     backendOnly: false
     numWorkers: 1
     image:
-      repository: langflow-oracle
-      imagePullPolicy: Never
+      repository: bahn1075/langflow-custom
+      imagePullPolicy: Always
       tag: latest
     command:
       - python

@@ -54,9 +54,9 @@ langflow:
   backend:
     replicaCount: 1
     service:
-      type: ClusterIP
+      type: LoadBalancer
       port: 7860
-    backendOnly: true
+    backendOnly: false
     numWorkers: 1
     image:
       repository: langflow-oracle
@@ -69,7 +69,6 @@ langflow:
       - run
       - --host
       - 0.0.0.0
-      - --backend-only
     resources:
       requests:
         cpu: 0.5
@@ -198,7 +197,7 @@ langflow:
     # newUserIsActive: true|false
 
   frontend:
-    enabled: true
+    enabled: false
     replicaCount: 1
     service:
       type: LoadBalancer

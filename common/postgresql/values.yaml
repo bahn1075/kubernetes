@@ -58,7 +58,7 @@ service:
     # service.beta.kubernetes.io/oci-load-balancer-shape-flex-max: "100"
 
 ingress:
-  enabled: true
+  enabled: false
   className: "nginx"
   annotations: {}
     # For PostgreSQL TCP connections through Ingress, you may need nginx-ingress TCP configmap

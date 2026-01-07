@@ -1,9 +1,9 @@
-### kubectl patch pv prometheus-fss-pv -p '{"spec":{"claimRef": null}}'
+### kubectl patch pv postgres-fss-pv -p '{"spec":{"claimRef": null}}'
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: postgres-postgresql-data-0
-  namespace: monitoring
+  namespace: postgres
   labels:
     app: postgres-fss-pvc
 spec:

@@ -62,6 +62,15 @@ admin:
 grafana.ini:
   server:
     root_url: http://grafana.64bit.kr
+  smtp:
+    enabled: true
+    host: smtp.gmail.com:587
+    user: your-email@gmail.com
+    password: your-app-password
+    skip_verify: false
+    from_address: your-email@gmail.com
+    from_name: Grafana Alerting
+    startTLS_policy: MandatoryStartTLS
 
 # 데이터소스 프로비저닝
 datasources:
